@@ -31,11 +31,11 @@ public static void main(String[] args) {
         DataBaseUtil.getConnection();
         System.out.println("Conexion exitosa");
     } catch (ClassNotFoundException e) {
-        // TODO Auto-generated catch block
+  
         e.printStackTrace();
         System.out.println("el driver no existe");
     } catch (SQLException e) {
-        // TODO Auto-generated catch block
+     
         System.out.println("no se establecio la conexion a db");
     }
 }
