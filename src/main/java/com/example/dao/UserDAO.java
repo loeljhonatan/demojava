@@ -3,7 +3,6 @@ package com.example.dao;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
@@ -16,14 +15,11 @@ public class UserDAO implements IUserDAO{
     @Override
     public void create(User user) {
   
-        Connection connection=null;
+        try(Connection connection=DataBaseUtil.getConnection()){
 
-        try {
-            connection=DataBaseUtil.getConnection();
+             final String SQLsentencia = "INSERT INTO usuario(nombre,apellido,edad) VALUES (?,?,?)";
 
-            String sql = "INSERT INTO usuario(nombre,apellido,edad) VALUES (?,?,?)";
-
-            PreparedStatement pre_statement = connection.prepareStatement(sql);
+            try(PreparedStatement pre_statement = connection.prepareStatement(SQLsentencia,Statement.RETURN_GENERATED_KEYS)){
 
             pre_statement.setString(1, user.getNombre());
             pre_statement.setString(2, user.getApellido());
@@ -31,85 +27,56 @@ public class UserDAO implements IUserDAO{
 
             pre_statement.executeUpdate();
 
-        } catch (ClassNotFoundException e) {
-            System.out.println("El Driver no existe");
-        } catch (SQLException e) {
-            System.out.println("no se establecio la conexión");
-        }finally{
-            if(connection!=null){
-                try {
-                    connection.close();
-                } catch (SQLException e) {
-                    e.printStackTrace();
+                try(ResultSet resultadoDeSql = pre_statement.getGeneratedKeys()){
+                    if(resultadoDeSql.next()){
+                        int id = resultadoDeSql.getInt(1);
+                        user.setId(id);
+                    }
                 }
-            }
-        }
-        
+            }    
+
+        } catch (Exception e) {
+            System.err.println(e);
+        }     
     }
 
     @Override
     public void update(User user) {
 
-        Connection connection=null;
+         try(Connection connection=DataBaseUtil.getConnection()){
+         
+            final String SQLsentencia = "UPDATE usuario SET nombre=?,apellido=?,edad=? WHERE id=?";
 
-        try {
-            connection=DataBaseUtil.getConnection();
-
-            String sql = "UPDATE usuario SET nombre=?,apellido=?,edad=? WHERE id=?";
-
-            PreparedStatement pre_statement = connection.prepareStatement(sql);
-
+            try(PreparedStatement pre_statement = connection.prepareStatement(SQLsentencia)){
+            
             pre_statement.setString(1, user.getNombre());
             pre_statement.setString(2, user.getApellido());
             pre_statement.setInt(3, user.getEdad());
             pre_statement.setInt(4, user.getId());
 
             pre_statement.executeUpdate();
-
-        } catch (ClassNotFoundException e) {
-            System.out.println("El Driver no existe");
-        } catch (SQLException e) {
-            System.out.println("no se establecio la conexión");
-        }finally{
-            if(connection!=null){
-                try {
-                    connection.close();
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                }
             }
-        }
-        
+        }catch (Exception e) {
+            System.err.println(e);
+        } 
     }
     @Override
     public void delete(User user) {
-        Connection connection=null;
-
-        try {
-            connection=DataBaseUtil.getConnection();
-
-            String sql = "DELETE FROM usuario WHERE id=?";
-
-            PreparedStatement pre_statement = connection.prepareStatement(sql);
-
-            pre_statement.setInt(1, user.getId());
-
-            pre_statement.executeUpdate();
-
-        } catch (ClassNotFoundException e) {
-            System.out.println("El Driver no existe");
-        } catch (SQLException e) {
-            System.out.println("no se establecio la conexión");
-        }finally{
-            if(connection!=null){
-                try {
-                    connection.close();
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                }
-            }
-        }
         
+        try(Connection connection=DataBaseUtil.getConnection()){
+
+            final String SQLsentencia = "DELETE FROM usuario WHERE id=?";
+
+            try(PreparedStatement pre_statement = connection.prepareStatement(SQLsentencia)){
+            
+                pre_statement.setInt(1, user.getId());
+
+                pre_statement.executeUpdate();
+            }
+
+        }catch (Exception e) {
+            System.err.println(e);
+        }   
     }
 
     @Override
@@ -117,93 +84,64 @@ public class UserDAO implements IUserDAO{
         
         List<User> usuarios = new ArrayList<User>();
 
-        Connection connection=null;
-
-        try {
-            connection=DataBaseUtil.getConnection();
-
-            String sql = "SELECT * FROM USUARIO";
-
-            Statement cre_statement = connection.createStatement();
-
-            ResultSet resultSet = cre_statement.executeQuery(sql);
-
-           while (resultSet.next()) {
-            int id=resultSet.getInt("id");
-            String nombre = resultSet.getString("nombre");
-            String apellido = resultSet.getString("apellido");
-            int edad = resultSet.getInt("edad");
-
-            User user = new User(id,nombre,apellido,edad);
-            usuarios.add(user);
+        try(Connection connection=DataBaseUtil.getConnection()){
             
-           }
+            final String SQLsentencia = "SELECT * FROM USUARIO";
+            
+            try(Statement cre_statement = connection.createStatement()){
+                
+                try(ResultSet resultadoDeSql = cre_statement.executeQuery(SQLsentencia);){
+                    
+                    while (resultadoDeSql.next()) {
+                    int id          = resultadoDeSql.getInt("id");
+                    String nombre   = resultadoDeSql.getString("nombre");
+                    String apellido = resultadoDeSql.getString("apellido");
+                    int edad        = resultadoDeSql.getInt("edad");
 
-
-        } catch (ClassNotFoundException e) {
-            System.out.println("El Driver no existe");
-        } catch (SQLException e) {
-            System.out.println("no se establecio la conexión");
-        }finally{
-            if(connection!=null){
-                try {
-                    connection.close();
-                } catch (SQLException e) {
-                    e.printStackTrace();
+                    User user = new User(id,nombre,apellido,edad);
+                    usuarios.add(user);
+                    }
                 }
             }
-        }
-
-         return usuarios;
+             
+        }catch (Exception e) {
+            System.err.println(e);
+        } 
+        return usuarios;
     }
 
     @Override
     public User findById(Integer id) {
         
-        User user = null;
+        User usuario = null;
 
-        Connection connection=null;
+        try(Connection connection=DataBaseUtil.getConnection()){
 
-        try {
-            connection=DataBaseUtil.getConnection();
+            final String SQLsentencia = "SELECT * FROM usuario WHERE id=?";
 
-            String sql = "SELECT * FROM usuario WHERE id=?";
+            try(PreparedStatement pre_statement = connection.prepareStatement(SQLsentencia);){
+                
+                pre_statement.setInt(1, id);
 
-            PreparedStatement pre_statement = connection.prepareStatement(sql);
+                try(ResultSet resultadoDeSql = pre_statement.executeQuery();){
 
-            pre_statement.setInt(1, id);
+                     while (resultadoDeSql.next()) {
 
-            ResultSet resultSet = pre_statement.executeQuery();
+                        int id_actual      = resultadoDeSql.getInt("id");
+                        String nombre       = resultadoDeSql.getString("nombre");
+                        String apellido     = resultadoDeSql.getString("apellido");
+                        int edad            = resultadoDeSql.getInt("edad");
 
-            while (resultSet.next()) {
+                        usuario = new User(id_actual,nombre,apellido,edad);
 
-            int current_id=resultSet.getInt("id");
-            String nombre = resultSet.getString("nombre");
-            String apellido = resultSet.getString("apellido");
-            int edad = resultSet.getInt("edad");
-
-             user = new User(current_id,nombre,apellido,edad);
-           ;
-            
-           }
-        
-        }catch (ClassNotFoundException e) {
-            System.out.println("El Driver no existe");
-        } catch (SQLException e) {
-            System.out.println("no se establecio la conexión");
-        }finally{
-            if(connection!=null){
-                try {
-                    connection.close();
-                } catch (SQLException e) {
-                    e.printStackTrace();
+                    }
                 }
             }
-        }
 
-         return user;
+        }catch (Exception e) {
+            System.err.println(e);
+        } 
+
+         return usuario;
     }
-
-  
-
 }
