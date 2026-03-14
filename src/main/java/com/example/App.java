@@ -60,5 +60,7 @@ public class App {
          for(User user1:userDao.findAll()){
             System.out.println(user1);}
 
+            //Archivo para la Clase 1 y 2 
+
     }
 }
